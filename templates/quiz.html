@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}{{ topic.name }}{% endblock %}
+{% block content %}<div class="quiz-shell"><div class="d-flex justify-content-between"><span class="eyebrow">{{ topic.level }} · {{ mode|title }}</span><span id="counter"></span></div><div class="progress my-3"><div id="bar" class="progress-bar" style="width:0%"></div></div><div id="card" class="quiz-card"></div></div>{% endblock %}
+{% block scripts %}<script>
+const words={{ words|tojson }},mode={{ mode|tojson }},level={{ topic.level|tojson }},topicId={{ topic.id|default('null') }},examNumber={{ exam_number|default('null') }};
+let index=0,score=0,start=Date.now(),answers=[],currentType;
+function shuffle(a){return a.sort(()=>Math.random()-.5)}
+function questionType(i){let n=i%10;return n<7?'meaning':n<9?'german':'article'}
+function render(){const w=words[index];currentType=questionType(index);let prompt,title,correct;
+ if(currentType==='meaning'){prompt='What does this German word mean?';title=`${w.article?w.article+' ':''}${w.german}`;correct=w.english}
+ else if(currentType==='german'){prompt='What is the German word for:';title=w.english;correct=w.german}
+ else{prompt='Which article is correct?';title=`___ ${w.german}`;correct=w.article}
+ let pool=currentType==='meaning'?words.filter(x=>x.id!==w.id).map(x=>x.english):currentType==='german'?words.filter(x=>x.id!==w.id).map(x=>x.german):['der','die','das'];
+ let options=shuffle([correct,...pool]).slice(0,4); if(!options.includes(correct))options[3]=correct; options=shuffle(options);
+ document.querySelector('#counter').textContent=`Question ${index+1} / ${words.length}`;document.querySelector('#bar').style.width=(index/words.length*100)+'%';
+ document.querySelector('#card').innerHTML=`<h2 class="question-prompt">${prompt}</h2><div class="word-title">${title}</div>${currentType!=='article'?`<div class="pronunciation">${w.pronunciation}</div>`:''}<div class="options">${options.map((o,i)=>`<label><input type="radio" name="answer" value="${o}"><span>${String.fromCharCode(65+i)}. ${o}</span></label>`).join('')}</div><button class="btn btn-primary btn-lg mt-3" onclick="submitAnswer()">Submit</button>${mode==='exam'?'<p class="text-muted mt-3"><i class="bi bi-shield-lock"></i> Feedback is hidden until the exam is submitted.</p>':''}<div id="feedback"></div>`}
+ async function submitAnswer(){let selected=document.querySelector('input[name=answer]:checked');if(!selected)return;let d=await (await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:words[index].id,answer:selected.value,question_type:currentType})})).json();answers.push({selected:selected.value,correct:d.correct});if(d.correct)score++;if(mode==='exam'){next();return}document.querySelector('#feedback').innerHTML=`<div class="feedback ${d.correct?'good':'bad'}"><strong>${d.correct?'✅ Correct!':'❌ Incorrect'}</strong><p>Your answer: ${selected.value}</p><p>Correct answer: <b>${d.correct_answer}</b></p><button class="btn btn-dark" onclick="next()">Next question →</button></div>`;document.querySelectorAll('input').forEach(x=>x.disabled=true)}
+ async function next(){index++;if(index<words.length){render();return}let r=await fetch('/api/quiz-result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quiz_type:mode,level,topic_id:topicId,exam_number:examNumber,score,total:words.length,duration:(Date.now()-start)/1000})});location.href=(await r.json()).redirect}
+ render();
+</script>{% endblock %}

@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<div class="hero compact"><span class="eyebrow">{{ topic.level }} · {{ kind|title }}</span><h1>{{ topic.name }}</h1><p>50 focused practice items with progress tracking.</p><a class="btn btn-yellow" href="/{{ kind }}/quiz/{{ topic.id }}">Start practice</a></div>{% endblock %}
