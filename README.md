@@ -22,6 +22,17 @@ A vocabulary-focused German A1 and A2 learning website built with Flask, SQLite,
 
 This application intentionally does **not** include audio, listening exercises, speech recognition, or grammar lessons.
 
+## Deploy to Vercel Free
+
+This repository includes [`vercel.json`](./vercel.json) and [`api/index.py`](./api/index.py) for Vercel's Python serverless runtime.
+
+1. Open [Vercel](https://vercel.com/new).
+2. Import `BharathChandra4545/learn-german`.
+3. Keep the framework preset as **Other**.
+4. Deploy.
+
+The free Vercel filesystem is ephemeral. The committed `database.db` is available to the deployment, but progress writes are not durable across serverless instance replacement. For durable progress, use a hosted database such as PostgreSQL or Turso.
+
 ## Windows setup
 
 ```powershell
